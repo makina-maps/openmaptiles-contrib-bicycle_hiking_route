@@ -1,0 +1,39 @@
+name_field: &name
+  name: name
+  key: name
+  type: string
+network_field: &network
+  key: network
+  name: network
+  type: string
+foot_field: &ref
+  key: ref
+  name: ref
+  type: string
+
+tables:
+# etldoc: imposm3 -> route_linestring
+  bicycle_hiking_route_linestring:
+    type: relation_member
+    columns:
+    - name: osm_id
+      type: id
+    - name: member_id
+      type: member_id
+    - name: role
+      type: member_role
+    - name: type
+      type: member_type
+    - name: route
+      key: route
+      type: string
+    - name: geometry
+      type: geometry
+    - *ref
+    - *network
+    - *name
+    relation_types: [route]
+    mapping:
+      route:
+      - bicycle
+      - hiking
