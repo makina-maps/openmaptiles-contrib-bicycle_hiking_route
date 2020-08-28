@@ -55,6 +55,7 @@ GROUP BY
     (ST_YMin(geometry) / 10000)::int
 ;
 
+DROP MATERIALIZED VIEW osm_bicycle_hiking_route_network_merge_z12 CASCADE;
 
 -- etldoc: osm_bicycle_hiking_route_network_merge -> osm_bicycle_hiking_route_network_merge_z12
 CREATE MATERIALIZED VIEW osm_bicycle_hiking_route_network_merge_z12 AS (
@@ -92,7 +93,8 @@ CREATE MATERIALIZED VIEW osm_bicycle_hiking_route_network_merge_z9 AS (
         bicycle_network, bicycle_name, bicycle_ref,
         hiking_network, hiking_name, hiking_ref
     FROM osm_bicycle_hiking_route_network_merge_z10
-    WHERE ST_Length(geometry) > 250
+    WHERE ST_Length(geometry) > 250 AND
+        least(bicycle_network, hiking_network) <= 4
 );
 CREATE INDEX IF NOT EXISTS osm_bicycle_hiking_route_network_merge_z9_geometry_idx ON osm_bicycle_hiking_route_network_merge_z9 USING gist(geometry);
 
@@ -102,8 +104,7 @@ CREATE MATERIALIZED VIEW osm_bicycle_hiking_route_network_merge_z8 AS (
         bicycle_network, bicycle_name, bicycle_ref,
         hiking_network, hiking_name, hiking_ref
     FROM osm_bicycle_hiking_route_network_merge_z9
-    WHERE ST_Length(geometry) > 500 AND
-        least(bicycle_network, hiking_network) <= 3
+    WHERE ST_Length(geometry) > 500
 );
 CREATE INDEX IF NOT EXISTS osm_bicycle_hiking_route_network_merge_z8_geometry_idx ON osm_bicycle_hiking_route_network_merge_z8 USING gist(geometry);
 
@@ -114,7 +115,7 @@ CREATE MATERIALIZED VIEW osm_bicycle_hiking_route_network_merge_z7 AS (
         hiking_network, hiking_name, hiking_ref
     FROM osm_bicycle_hiking_route_network_merge_z8
     WHERE ST_Length(geometry) > 1000 AND
-        least(bicycle_network, hiking_network) <= 2
+        least(bicycle_network, hiking_network) <= 3
 );
 CREATE INDEX IF NOT EXISTS osm_bicycle_hiking_route_network_merge_z7_geometry_idx ON osm_bicycle_hiking_route_network_merge_z7 USING gist(geometry);
 
@@ -124,15 +125,47 @@ CREATE MATERIALIZED VIEW osm_bicycle_hiking_route_network_merge_z6 AS (
         bicycle_network, bicycle_name, bicycle_ref,
         hiking_network, hiking_name, hiking_ref
     FROM osm_bicycle_hiking_route_network_merge_z7
+    WHERE ST_Length(geometry) > 2000
+);
+CREATE INDEX IF NOT EXISTS osm_bicycle_hiking_route_network_merge_z6_geometry_idx ON osm_bicycle_hiking_route_network_merge_z6 USING gist(geometry);
+
+-- etldoc: osm_bicycle_hiking_route_network_merge_z6 -> osm_bicycle_hiking_route_network_merge_z5
+CREATE MATERIALIZED VIEW osm_bicycle_hiking_route_network_merge_z5 AS (
+    SELECT ST_Simplify(geometry, 1600) AS geometry,
+        bicycle_network, bicycle_name, bicycle_ref,
+        hiking_network, hiking_name, hiking_ref
+    FROM osm_bicycle_hiking_route_network_merge_z6
+    WHERE ST_Length(geometry) > 2000 AND
+        least(bicycle_network, hiking_network) <= 2
+);
+CREATE INDEX IF NOT EXISTS osm_bicycle_hiking_route_network_merge_z5_geometry_idx ON osm_bicycle_hiking_route_network_merge_z6 USING gist(geometry);
+
+-- etldoc: osm_bicycle_hiking_route_network_merge_z5 -> osm_bicycle_hiking_route_network_merge_z4
+CREATE MATERIALIZED VIEW osm_bicycle_hiking_route_network_merge_z4 AS (
+    SELECT ST_Simplify(geometry, 1600) AS geometry,
+        bicycle_network, bicycle_name, bicycle_ref,
+        hiking_network, hiking_name, hiking_ref
+    FROM osm_bicycle_hiking_route_network_merge_z5
     WHERE ST_Length(geometry) > 2000 AND
         least(bicycle_network, hiking_network) <= 1
 );
-CREATE INDEX IF NOT EXISTS osm_bicycle_hiking_route_network_merge_z6_geometry_idx ON osm_bicycle_hiking_route_network_merge_z6 USING gist(geometry);
+CREATE INDEX IF NOT EXISTS osm_bicycle_hiking_route_network_merge_z4_geometry_idx ON osm_bicycle_hiking_route_network_merge_z6 USING gist(geometry);
+
 
 -- etldoc: layer_bicycle_hiking_route[shape=record fillcolor=lightpink, style="rounded,filled",
 -- etldoc:     label="<sql> layer_bicycle_hiking_route |<z6> z6 |<z7> z7 |<z8> z8 |<z9> z9 |<z10> z10 |<z11> z11 |<z12> z12|<z13> z13|<z14_> z14+" ] ;
 CREATE OR REPLACE FUNCTION layer_bicycle_hiking_route(bbox geometry, zoom_level int)
 RETURNS TABLE(geometry geometry, bicycle_network INTEGER, bicycle_name TEXT, bicycle_ref TEXT, hiking_network INTEGER, hiking_name TEXT, hiking_ref TEXT) AS $$
+    SELECT *
+    FROM osm_bicycle_hiking_route_network_merge_z4
+    WHERE zoom_level = 4 AND geometry && bbox
+    UNION ALL
+
+    SELECT *
+    FROM osm_bicycle_hiking_route_network_merge_z5
+    WHERE zoom_level = 5 AND geometry && bbox
+    UNION ALL
+
     SELECT *
     FROM osm_bicycle_hiking_route_network_merge_z6
     WHERE zoom_level = 6 AND geometry && bbox
