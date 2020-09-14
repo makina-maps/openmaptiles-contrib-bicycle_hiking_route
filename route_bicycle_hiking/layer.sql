@@ -55,7 +55,7 @@ GROUP BY
     (ST_YMin(geometry) / 10000)::int
 ;
 
-DROP MATERIALIZED VIEW osm_bicycle_hiking_route_network_merge_z12 CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS osm_bicycle_hiking_route_network_merge_z12 CASCADE;
 
 -- etldoc: osm_bicycle_hiking_route_network_merge -> osm_bicycle_hiking_route_network_merge_z12
 CREATE MATERIALIZED VIEW osm_bicycle_hiking_route_network_merge_z12 AS (

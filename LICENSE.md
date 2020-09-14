@@ -1,5 +1,5 @@
-Copyright (c) 2016, KlokanTech.com & OpenMapTiles contributors.  
-All rights reserved.  
+Copyright (c) 2020, Makina Corpus & contributors.
+All rights reserved.
 
 The vector tile schema has been developed by Klokan Technologies GmbH and
 was initially modelled after the cartography of the CARTO's Positron basemap
