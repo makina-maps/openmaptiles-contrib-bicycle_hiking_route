@@ -12,8 +12,8 @@ foot_field: &ref
   type: string
 
 tables:
-# etldoc: imposm3 -> route_linestring
-  bicycle_hiking_route_linestring:
+  # etldoc: imposm3 -> osm_route_bicycle_hiking_linestring
+  route_bicycle_hiking_linestring:
     type: relation_member
     columns:
     - name: osm_id

@@ -1,5 +1,5 @@
 layer:
-  id: "bicycle_hiking_route"
+  id: "route_bicycle_hiking"
   description: |
       **route** contains route for bicycle and hiking.
   buffer_size: 4
@@ -26,7 +26,7 @@ layer:
   datasource:
     geometry_field: geometry
     srid: 900913
-    query: (SELECT geometry, bicycle_network, bicycle_name, bicycle_ref, hiking_network, hiking_name, hiking_ref FROM layer_bicycle_hiking_route(!bbox!, z(!scale_denominator!))) AS t
+    query: (SELECT geometry, bicycle_network, bicycle_name, bicycle_ref, hiking_network, hiking_name, hiking_ref FROM layer_route_bicycle_hiking(!bbox!, z(!scale_denominator!))) AS t
 schema:
   - ./layer.sql
 datasources:
