@@ -5,6 +5,7 @@ This project is an [OpenMapTiles](https://github.com/openmaptiles/openmaptiles) 
 It adds the data layer:
 
 * `route_bicycle_hiking`: containing linestring routes for bicycle and hiking with defined network, name and ref.
+* `transportation_bicycle`: bicycle facilities of transport network and allowed acces.
 
 Git-clone this project on the root the the OpenMapTiles project:
 ```

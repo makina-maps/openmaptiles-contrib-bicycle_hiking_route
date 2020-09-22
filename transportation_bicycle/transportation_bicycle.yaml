@@ -1,0 +1,42 @@
+layer:
+  id: "transportation_bicycle"
+  description: |
+      **route** contains route for bicycle and hiking.
+  buffer_size: 16
+  srs: +proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over
+  fields:
+    highway:
+      description: |
+        OSM highway value.
+    facility:
+      description: |
+        * lane
+        * track
+        * busway
+        * cycleway
+    access:
+      description: |
+        For right hand driving side.
+        * 1: right
+        * -1: left
+    facility_left:
+      description: |
+        Same as facility, only on left side.
+    access_left:
+      description: |
+        Same as access, only on left side.
+    facility_right:
+      description: |
+        Same as facility, only on left right.
+    access_right:
+      description: |
+        Same as access, only on left right.
+  datasource:
+    geometry_field: geometry
+    srid: 900913
+    query: (SELECT geometry, highway, facility, access, facility_left, access_left, facility_right, access_right FROM layer_transportation_bicycle(!bbox!, z(!scale_denominator!))) AS t
+schema:
+  - ./layer.sql
+datasources:
+  - type: imposm3
+    mapping_file: ./mapping.yaml

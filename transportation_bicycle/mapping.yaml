@@ -1,0 +1,72 @@
+tables:
+  # etldoc: imposm3 -> osm_highway_bicycle
+  highway_bicycle:
+    type: linestring
+    columns:
+    - name: osm_id
+      type: id
+    - name: geometry
+      type: geometry
+    - name: highway
+      key: highway
+      type: string
+    - name: bicycle
+      key: bicycle
+      type: string
+    - name: oneway
+      key: oneway
+      type: string
+    - name: oneway:bicycle
+      key: oneway:bicycle
+      type: string
+    - name: cycleway
+      key: cycleway
+      type: string
+    - name: "cycleway:left"
+      key: "cycleway:left"
+      type: string
+    - name: "cycleway:right"
+      key: "cycleway:right"
+      type: string
+    - name: "cycleway:both"
+      key: "cycleway:both"
+      type: string
+    - name: "ramp:bicycle"
+      key: "ramp:bicycle"
+      type: string
+    - name: junction
+      key: junction
+      type: string
+    mapping:
+      highway: [residential, service, track, unclassified, footway, path, tertiary, secondary, primary, living_street, steps, pedestrian, primary_link, secondary_link, tertiary_link, road, bridleway]
+      junction: [roundabout]
+      access: [_any_] # Only for filter
+    filters:
+      reject:
+        bicycle: ['no']
+        access: ['no', private]
+        service: [parking_aisle]
+
+  # etldoc: imposm3 -> osm_cycleway
+  cycleway:
+    type: linestring
+    columns:
+    - name: osm_id
+      type: id
+    - name: geometry
+      type: geometry
+    - name: highway
+      key: highway
+      type: string
+    - name: bicycle
+      key: bicycle
+      type: string
+    - name: oneway
+      key: oneway
+      type: string
+    - name: junction
+      key: junction
+      type: string
+    mapping:
+      highway: [cycleway]
+      junction: [roundabout]
