@@ -1,3 +1,4 @@
+-- etldoc: osm_highway_bicycle -> osm_highway_bicycle_side_priority
 DROP TABLE IF EXISTS osm_highway_bicycle_side_priority;
 CREATE TABLE osm_highway_bicycle_side_priority AS
 SELECT
@@ -161,6 +162,7 @@ WHERE
 ;
 
 
+-- etldoc: osm_highway_bicycle_side_priority -> osm_highway_bicycle_side
 DROP TABLE IF EXISTS osm_highway_bicycle_side;
 CREATE TABLE osm_highway_bicycle_side AS
 SELECT
@@ -180,6 +182,7 @@ ORDER BY
 ;
 
 
+-- etldoc: osm_highway_bicycle_side -> osm_highway_bicycle_all
 DROP TABLE IF EXISTS osm_highway_bicycle_all;
 CREATE TABLE osm_highway_bicycle_all AS
 SELECT
@@ -201,7 +204,7 @@ GROUP BY
 
 
 -- etldoc: layer_transportation_bicycle[shape=record fillcolor=lightpink, style="rounded,filled",
--- etldoc:     label="<sql> layer_transportation_bicycle |<z6> z6 |<z7> z7 |<z8> z8 |<z9> z9 |<z10> z10 |<z11> z11 |<z12> z12|<z13> z13|<z14_> z14+" ] ;
+-- etldoc:     label="<sql> layer_transportation_bicycle |<z11> z11 |<z12> z12|<z13> z13|<z14_> z14+" ] ;
 CREATE OR REPLACE FUNCTION layer_transportation_bicycle(bbox geometry, zoom_level int)
     RETURNS TABLE
             (
@@ -217,6 +220,10 @@ CREATE OR REPLACE FUNCTION layer_transportation_bicycle(bbox geometry, zoom_leve
             )
 AS
 $$
+    -- etldoc: osm_highway_bicycle_all -> layer_transportation_bicycle:z11
+    -- etldoc: osm_highway_bicycle_all -> layer_transportation_bicycle:z12
+    -- etldoc: osm_highway_bicycle_all -> layer_transportation_bicycle:z13
+    -- etldoc: osm_highway_bicycle_all -> layer_transportation_bicycle:z14_
     SELECT
         osm_id,
         geometry,
@@ -239,6 +246,10 @@ $$
 
     UNION ALL
 
+    -- etldoc: osm_cycleway -> layer_transportation_bicycle:z11
+    -- etldoc: osm_cycleway -> layer_transportation_bicycle:z12
+    -- etldoc: osm_cycleway -> layer_transportation_bicycle:z13
+    -- etldoc: osm_cycleway -> layer_transportation_bicycle:z14_
     SELECT
         osm_id,
         geometry,
