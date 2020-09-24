@@ -10,15 +10,20 @@ layer:
         OSM highway value.
     facility:
       description: |
-        * lane
-        * track
-        * busway
-        * cycleway
+        Facility for bicycle.
+      values:
+        - lane
+        - track
+        - busway
+        - cycleway
     access:
       description: |
         For right hand driving side.
         * 1: right
         * -1: left
+      values:
+        - 1
+        - -1
     facility_left:
       description: |
         Same as facility, only on left side.

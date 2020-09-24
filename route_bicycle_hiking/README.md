@@ -1,8 +1,5 @@
 ## route
 
-### Docs
-Read the layer documentation at **http://openmaptiles.org/schema#route**
-
 ### Mapping Diagram
 ![Mapping diagram for routen](mapping_diagram.png?raw=true)
 
