@@ -1,6 +1,6 @@
--- etldoc: osm_highway_bicycle -> osm_highway_bicycle_side_priority
-DROP TABLE IF EXISTS osm_highway_bicycle_side_priority;
-CREATE TABLE osm_highway_bicycle_side_priority AS
+DROP INDEX osm_highway_bicycle_geom;
+
+CREATE VIEW osm_highway_bicycle_side_priority AS
 SELECT
     0::smallint AS priority,
     osm_id,
@@ -162,9 +162,8 @@ WHERE
 ;
 
 
--- etldoc: osm_highway_bicycle_side_priority -> osm_highway_bicycle_side
 DROP TABLE IF EXISTS osm_highway_bicycle_side;
-CREATE TABLE osm_highway_bicycle_side AS
+CREATE VIEW osm_highway_bicycle_side AS
 SELECT
     DISTINCT ON (osm_id, side)
     osm_id,
@@ -182,7 +181,7 @@ ORDER BY
 ;
 
 
--- etldoc: osm_highway_bicycle_side -> osm_highway_bicycle_all
+-- etldoc: osm_highway_bicycle -> osm_highway_bicycle_all
 DROP TABLE IF EXISTS osm_highway_bicycle_all;
 CREATE TABLE osm_highway_bicycle_all AS
 SELECT
@@ -194,7 +193,7 @@ SELECT
     (array_agg(access))[array_position(array_agg(side), 'right')] AS access_right,
     geometry
 FROM
-    osm_highway_bicycle_side AS bleft
+    osm_highway_bicycle_side
 GROUP BY
     osm_id,
     highway,
