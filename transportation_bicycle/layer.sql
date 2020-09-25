@@ -200,7 +200,7 @@ GROUP BY
     highway,
     geometry
 ;
-
+CREATE INDEX IF NOT EXISTS osm_highway_bicycle_all_geometry_idx ON osm_highway_bicycle_all USING gist(geometry);
 
 
 -- etldoc: layer_transportation_bicycle[shape=record fillcolor=lightpink, style="rounded,filled",
