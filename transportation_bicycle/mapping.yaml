@@ -5,8 +5,6 @@ tables:
     columns:
     - name: osm_id
       type: id
-    - name: geometry
-      type: geometry
     - name: highway
       key: highway
       type: string

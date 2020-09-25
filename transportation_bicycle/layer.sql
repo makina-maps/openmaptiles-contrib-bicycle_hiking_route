@@ -1,6 +1,4 @@
-DROP INDEX osm_highway_bicycle_geom;
-
-CREATE VIEW osm_highway_bicycle_side_priority AS
+CREATE OR REPLACE VIEW osm_highway_bicycle_side_priority AS
 SELECT
     0::smallint AS priority,
     osm_id,
@@ -19,8 +17,7 @@ SELECT
         WHEN "cycleway:left" IN ('opposite_lane', 'opposite', 'opposite_track', 'opposite_share_busway')
             THEN -1::smallint
     END AS access,
-    'left' AS side,
-    geometry
+    'left' AS side
 FROM
     osm_highway_bicycle
 WHERE
@@ -46,8 +43,7 @@ SELECT
         WHEN "cycleway:right" IN ('opposite_lane', 'opposite', 'opposite_track', 'opposite_share_busway')
             THEN -1::smallint
     END AS access,
-    'right' AS side,
-    geometry
+    'right' AS side
 FROM
     osm_highway_bicycle
 WHERE
@@ -113,8 +109,7 @@ SELECT
             END
         END
     END::smallint AS access,
-    side,
-    geometry
+    side
 FROM
     (VALUES ('right'), ('left')) AS t(side),
     (SELECT *, CASE WHEN "cycleway:both" != '' THEN "cycleway:both" ELSE cycleway END AS way FROM osm_highway_bicycle) AS osm_highway_bicycle
@@ -149,8 +144,7 @@ SELECT
             -1::smallint
         END
     END AS access,
-    side,
-    geometry
+    side
 FROM
     (VALUES ('right'), ('left')) AS t(side),
     osm_highway_bicycle
@@ -162,16 +156,13 @@ WHERE
 ;
 
 
-DROP TABLE IF EXISTS osm_highway_bicycle_side;
-CREATE VIEW osm_highway_bicycle_side AS
+CREATE OR REPLACE VIEW osm_highway_bicycle_side AS
 SELECT
     DISTINCT ON (osm_id, side)
     osm_id,
-    highway,
     first_value(facility) OVER (PARTITION BY osm_id, side ORDER BY facility IS NULL, priority) AS facility,
     first_value(access) OVER (PARTITION BY osm_id, side ORDER BY access IS NULL, priority) AS access,
-    side,
-    geometry
+    side
 FROM
     osm_highway_bicycle_side_priority
 ORDER BY
@@ -182,24 +173,33 @@ ORDER BY
 
 
 -- etldoc: osm_highway_bicycle -> osm_highway_bicycle_all
-DROP TABLE IF EXISTS osm_highway_bicycle_all;
-CREATE TABLE osm_highway_bicycle_all AS
+CREATE TABLE IF NOT EXISTS osm_highway_bicycle_all AS
 SELECT
     osm_id,
-    highway,
     (array_agg(facility))[array_position(array_agg(side), 'left')] AS facility_left,
     (array_agg(access))[array_position(array_agg(side), 'left')] AS access_left,
     (array_agg(facility))[array_position(array_agg(side), 'right')] AS facility_right,
-    (array_agg(access))[array_position(array_agg(side), 'right')] AS access_right,
-    geometry
+    (array_agg(access))[array_position(array_agg(side), 'right')] AS access_right
 FROM
     osm_highway_bicycle_side
 GROUP BY
-    osm_id,
-    highway,
-    geometry
+    osm_id
 ;
-CREATE INDEX IF NOT EXISTS osm_highway_bicycle_all_geometry_idx ON osm_highway_bicycle_all USING gist(geometry);
+CREATE INDEX IF NOT EXISTS osm_highway_bicycle_all_osm_id_idx ON osm_highway_bicycle_all(osm_id);
+
+
+-- etldoc: osm_highway_bicycle_all -> osm_highway_bicycle_all_geom
+-- etldoc: osm_highway_linestring -> osm_highway_bicycle_all_geom
+CREATE OR REPLACE VIEW osm_highway_bicycle_all_geom AS
+SELECT
+    osm_highway_bicycle_all.*,
+    osm_highway_linestring.highway,
+    osm_highway_linestring.geometry
+FROM
+    osm_highway_bicycle_all
+    JOIN osm_highway_linestring ON
+        osm_highway_bicycle_all.osm_id = osm_highway_linestring.osm_id
+;
 
 
 -- etldoc: layer_transportation_bicycle[shape=record fillcolor=lightpink, style="rounded,filled",
@@ -219,10 +219,10 @@ CREATE OR REPLACE FUNCTION layer_transportation_bicycle(bbox geometry, zoom_leve
             )
 AS
 $$
-    -- etldoc: osm_highway_bicycle_all -> layer_transportation_bicycle:z11
-    -- etldoc: osm_highway_bicycle_all -> layer_transportation_bicycle:z12
-    -- etldoc: osm_highway_bicycle_all -> layer_transportation_bicycle:z13
-    -- etldoc: osm_highway_bicycle_all -> layer_transportation_bicycle:z14_
+    -- etldoc: osm_highway_bicycle_all_geom -> layer_transportation_bicycle:z11
+    -- etldoc: osm_highway_bicycle_all_geom -> layer_transportation_bicycle:z12
+    -- etldoc: osm_highway_bicycle_all_geom -> layer_transportation_bicycle:z13
+    -- etldoc: osm_highway_bicycle_all_geom -> layer_transportation_bicycle:z14_
     SELECT
         osm_id,
         geometry,
@@ -234,7 +234,7 @@ $$
         facility_right,
         access_right
     FROM
-        osm_highway_bicycle_all
+        osm_highway_bicycle_all_geom
     WHERE
         (
             (zoom_level >= 11 AND (facility_left IS NOT NULL OR facility_right IS NOT NULL))
