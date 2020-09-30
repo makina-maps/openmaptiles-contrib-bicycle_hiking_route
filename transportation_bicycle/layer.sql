@@ -219,52 +219,55 @@ CREATE OR REPLACE FUNCTION layer_transportation_bicycle(bbox geometry, zoom_leve
             )
 AS
 $$
-    -- etldoc: osm_highway_bicycle_all_geom -> layer_transportation_bicycle:z11
-    -- etldoc: osm_highway_bicycle_all_geom -> layer_transportation_bicycle:z12
-    -- etldoc: osm_highway_bicycle_all_geom -> layer_transportation_bicycle:z13
-    -- etldoc: osm_highway_bicycle_all_geom -> layer_transportation_bicycle:z14_
     SELECT
-        osm_id,
-        geometry,
-        highway,
-        NULL::text AS facility,
-        NULL::smallint AS access,
-        facility_left,
-        access_left,
-        facility_right,
-        access_right
-    FROM
-        osm_highway_bicycle_all_geom
+        *
+    FROM (
+        -- etldoc: osm_highway_bicycle_all_geom -> layer_transportation_bicycle:z11
+        -- etldoc: osm_highway_bicycle_all_geom -> layer_transportation_bicycle:z12
+        -- etldoc: osm_highway_bicycle_all_geom -> layer_transportation_bicycle:z13
+        -- etldoc: osm_highway_bicycle_all_geom -> layer_transportation_bicycle:z14_
+        SELECT
+            osm_id,
+            geometry,
+            highway,
+            NULL::text AS facility,
+            NULL::smallint AS access,
+            facility_left,
+            access_left,
+            facility_right,
+            access_right
+        FROM
+            osm_highway_bicycle_all_geom
+        WHERE
+            (
+                (zoom_level >= 11 AND (facility_left IS NOT NULL OR facility_right IS NOT NULL))
+                OR
+                zoom_level >= 13
+            )
+
+        UNION ALL
+
+        -- etldoc: osm_cycleway -> layer_transportation_bicycle:z11
+        -- etldoc: osm_cycleway -> layer_transportation_bicycle:z12
+        -- etldoc: osm_cycleway -> layer_transportation_bicycle:z13
+        -- etldoc: osm_cycleway -> layer_transportation_bicycle:z14_
+        SELECT
+            osm_id,
+            geometry,
+            highway,
+            'cycleway' AS facility,
+            CASE WHEN oneway = 'yes' OR junction = 'roundabout' THEN 1 END::smallint AS access,
+            NULL::text AS facility_left,
+            NULL::smallint AS access_left,
+            NULL::text AS facility_right,
+            NULL::smallint AS access_right
+        FROM
+            osm_cycleway
+        WHERE
+            zoom_level >= 11 AND
+            highway = 'cycleway'
+    ) AS t
     WHERE
-        (
-            (zoom_level >= 11 AND (facility_left IS NOT NULL OR facility_right IS NOT NULL))
-            OR
-            zoom_level >= 13
-        ) AND
         geometry && bbox
-
-    UNION ALL
-
-    -- etldoc: osm_cycleway -> layer_transportation_bicycle:z11
-    -- etldoc: osm_cycleway -> layer_transportation_bicycle:z12
-    -- etldoc: osm_cycleway -> layer_transportation_bicycle:z13
-    -- etldoc: osm_cycleway -> layer_transportation_bicycle:z14_
-    SELECT
-        osm_id,
-        geometry,
-        highway,
-        'cycleway' AS facility,
-        -- CASE WHEN oneway = 'yes' OR junction = 'roundabout' THEN 1 END::smallint AS access,
-        CASE WHEN oneway = 'yes' THEN 1 END::smallint AS access,
-        NULL::text AS facility_left,
-        NULL::smallint AS access_left,
-        NULL::text AS facility_right,
-        NULL::smallint AS access_right
-    FROM
-        osm_cycleway
-    WHERE
-        zoom_level >= 11 AND
-        geometry && bbox AND
-        highway = 'cycleway'
     ;
 $$ LANGUAGE SQL IMMUTABLE;
