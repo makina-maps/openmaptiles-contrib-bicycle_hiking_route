@@ -28,7 +28,8 @@ layer:
     srid: 900913
     query: (SELECT geometry, bicycle_network, bicycle_name, bicycle_ref, hiking_network, hiking_name, hiking_ref FROM layer_route_bicycle_hiking(!bbox!, z(!scale_denominator!))) AS t
 schema:
-  - ./layer.sql
+  - ./update_route_bicycle_hiking_merge.sql
+  - ./route_bicycle_hiking.sql
 datasources:
   - type: imposm3
     mapping_file: ./mapping.yaml
