@@ -41,6 +41,7 @@ layer:
     srid: 900913
     query: (SELECT geometry, highway, facility, access, facility_left, access_left, facility_right, access_right FROM layer_transportation_bicycle(!bbox!, z(!scale_denominator!))) AS t
 schema:
+  - ./update_transportation_bicycle.sql
   - ./transportation_bicycle.sql
 datasources:
   - type: imposm3
