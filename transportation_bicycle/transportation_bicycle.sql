@@ -173,8 +173,7 @@ ORDER BY
 
 
 -- etldoc: osm_highway_bicycle -> osm_highway_bicycle_all
-DROP MATERIALIZED VIEW IF EXISTS osm_highway_bicycle_all CASCADE;
-CREATE MATERIALIZED VIEW osm_highway_bicycle_all AS
+CREATE TABLE IF NOT EXISTS osm_highway_bicycle_all AS
 SELECT
     osm_id,
     (array_agg(facility))[array_position(array_agg(side), 'left')] AS facility_left,
@@ -186,7 +185,7 @@ FROM
 GROUP BY
     osm_id
 ;
-CREATE INDEX IF NOT EXISTS osm_highway_bicycle_all_osm_id_idx ON osm_highway_bicycle_all(osm_id);
+CREATE UNIQUE INDEX IF NOT EXISTS osm_highway_bicycle_all_osm_id_idx ON osm_highway_bicycle_all(osm_id);
 
 
 -- etldoc: osm_highway_bicycle_all -> osm_highway_bicycle_all_geom
