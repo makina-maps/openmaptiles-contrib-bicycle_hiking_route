@@ -37,3 +37,6 @@ tables:
       route:
       - bicycle
       - hiking
+    filters:
+      require:
+        network: ["icn", "ncn", "rcn", "lcn", "iwn", "nwn", "rwn", "lwn"]

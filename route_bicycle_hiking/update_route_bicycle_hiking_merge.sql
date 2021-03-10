@@ -20,7 +20,6 @@ FROM
     osm_route_bicycle_hiking_linestring
 WHERE
     "type" = 1 AND
-    network != '' AND
     network_level(network) IS NOT NULL AND
     role IN ('', 'forward', 'backward', 'reverse')
 ORDER BY
