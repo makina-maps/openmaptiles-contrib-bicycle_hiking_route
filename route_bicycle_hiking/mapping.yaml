@@ -6,7 +6,7 @@ network_field: &network
   key: network
   name: network
   type: string
-foot_field: &ref
+ref_field: &ref
   key: ref
   name: ref
   type: string
@@ -17,8 +17,6 @@ tables:
     type: relation_member
     columns:
     - name: osm_id
-      type: id
-    - name: member_id
       type: member_id
     - name: role
       type: member_role

@@ -12,8 +12,8 @@ $$ LANGUAGE SQL IMMUTABLE STRICT PARALLEL SAFE;
 
 -- etldoc: osm_route_bicycle_hiking_linestring -> osm_route_bicycle_hiking_max_network
 CREATE OR REPLACE VIEW osm_route_bicycle_hiking_max_network AS
-SELECT DISTINCT ON (member_id, route)
-    member_id AS osm_id,
+SELECT DISTINCT ON (osm_id, route)
+    osm_id,
     geometry,
     route,
     network_level(network) AS network,
@@ -26,7 +26,7 @@ WHERE
     network_level(network) IS NOT NULL AND
     role IN ('', 'forward', 'backward', 'reverse')
 ORDER BY
-    member_id,
+    osm_id,
     route,
     network_level(network)
 ;
@@ -305,6 +305,7 @@ CREATE TABLE IF NOT EXISTS route_bicycle_hiking.changes
     is_old boolean,
     geometry geometry,
     route varchar,
+    network varchar,
     name varchar,
     ref varchar
 );
@@ -313,12 +314,12 @@ CREATE OR REPLACE FUNCTION route_bicycle_hiking.store() RETURNS trigger AS
 $$
 BEGIN
     IF (tg_op = 'DELETE' OR tg_op = 'UPDATE') AND old.type = 1 THEN
-        INSERT INTO route_bicycle_hiking.changes(osm_id, role, is_old, geometry, route, name, ref)
-        VALUES (old.osm_id, old.role , true, old.geometry, old.route, old.name, old.ref);
+        INSERT INTO route_bicycle_hiking.changes(osm_id, role, is_old, geometry, route, network, name, ref)
+        VALUES (old.osm_id, old.role , true, old.geometry, old.route, old.network, old.name, old.ref);
     END IF;
     IF (tg_op = 'UPDATE' OR tg_op = 'INSERT') AND new.type = 1 THEN
-        INSERT INTO route_bicycle_hiking.changes(osm_id, role, is_old, geometry, route, name, ref)
-        VALUES (new.osm_id, new.role, false, new.geometry, new.route, new.name, new.ref);
+        INSERT INTO route_bicycle_hiking.changes(osm_id, role, is_old, geometry, route, network, name, ref)
+        VALUES (new.osm_id, new.role, false, new.geometry, new.route, new.network, new.name, new.ref);
     END IF;
     RETURN NULL;
 END;
@@ -345,6 +346,10 @@ DECLARE
 BEGIN
     RAISE LOG 'Refresh route_bicycle_hiking';
 
+    --
+    -- Simplify the changes set
+    --
+
     -- Compact the change history to keep only the first and last version
     CREATE TEMP TABLE changes_compact AS
     SELECT
@@ -353,6 +358,7 @@ BEGIN
         is_old,
         geometry,
         route,
+        network,
         name,
         ref
     FROM ((
@@ -371,131 +377,142 @@ BEGIN
                        id DESC
           )) AS t;
 
-    CREATE OR REPLACE TEMP VIEW changes_osm_route_bicycle_hiking_max_network AS
-    SELECT DISTINCT ON (osm_id, route, is_old)
+    -- Delete not matching roles
+    DELETE FROM changes_compact
+    WHERE role NOT IN ('', 'forward', 'backward', 'reverse');
+
+    -- As Imposm inserts full relation, list unchaged way
+    CREATE TEMP TABLE no_changed AS
+    SELECT
+        n.osm_id
+    FROM
+        changes_compact AS o
+        JOIN changes_compact AS n ON
+            n.osm_id = o.osm_id AND
+            o.is_old AND
+            NOT n.is_old
+    WHERE
+        o.role IS NOT DISTINCT FROM n.role AND
+        o.geometry IS NOT DISTINCT FROM n.geometry AND
+        o.route IS NOT DISTINCT FROM n.route AND
+        o.network IS NOT DISTINCT FROM n.network AND
+        o.name IS NOT DISTINCT FROM n.name AND
+        o.ref IS NOT DISTINCT FROM n.ref;
+
+    -- Delete unchanged ways
+    DELETE FROM changes_compact
+    USING no_changed
+    WHERE changes_compact.osm_id = no_changed.osm_id;
+
+    DROP TABLE no_changed;
+
+    --
+    -- Fetch impacted merged ways and delete
+    --
+
+    CREATE TEMP TABLE original_merge AS
+    SELECT DISTINCT ON (r.geometry)
+        r.geometry
+    FROM osm_route_bicycle_hiking_network_merge AS r
+        JOIN changes_compact AS c ON
+            r.geometry && c.geometry
+            AND ST_Contains(r.geometry, c.geometry);
+
+    DELETE FROM osm_route_bicycle_hiking_network_merge AS r
+    USING original_merge AS c
+    WHERE
+        r.geometry && c.geometry
+        AND ST_Equals(r.geometry, c.geometry);
+
+    --
+    -- Reconstruct new merged ways
+    --
+
+    CREATE TEMP TABLE changes_osm_route_bicycle_hiking_max_network AS
+    SELECT DISTINCT ON (osm_id, route)
         osm_id,
-        is_old,
         geometry,
         route,
+        network_level(network) AS network,
         name,
         ref
-    FROM
-        changes_compact
+    FROM ((
+        SELECT
+            osm_id,
+            role,
+            geometry,
+            route,
+            network,
+            name,
+            ref
+        FROM
+            changes_compact
+        WHERE
+            NOT is_old
+    ) UNION (
+        SELECT
+            osm_id,
+            role,
+            t.geometry,
+            route,
+            network,
+            name,
+            ref
+        FROM
+            osm_route_bicycle_hiking_linestring AS t
+            JOIN original_merge AS c ON
+                c.geometry && t.geometry
+                AND ST_Contains(c.geometry, t.geometry)
+        WHERE
+            "type" = 1
+    )) AS t
     WHERE
+        network_level(network) IS NOT NULL AND
         role IN ('', 'forward', 'backward', 'reverse')
     ORDER BY
         osm_id,
         route,
-        is_old;
+        network_level(network)
+    ;
+    CREATE INDEX changes_osm_route_bicycle_hiking_max_network_idx_osm_id ON changes_osm_route_bicycle_hiking_max_network(osm_id);
 
     CREATE OR REPLACE TEMP VIEW changes_osm_route_bicycle_hiking_network AS
     SELECT
         coalesce(bicycle.osm_id, hiking.osm_id) AS osm_id,
-        coalesce(bicycle.is_old, hiking.is_old) AS is_old,
         coalesce(bicycle.geometry, hiking.geometry) AS geometry,
-        -- bicycle.network AS bicycle_network,
+        bicycle.network AS bicycle_network,
         bicycle.name AS bicycle_name,
         bicycle.ref AS bicycle_ref,
-        -- hiking.network AS hiking_network,
+        hiking.network AS hiking_network,
         hiking.name AS hiking_name,
         hiking.ref AS hiking_ref
     FROM
         (SELECT * FROM changes_osm_route_bicycle_hiking_max_network WHERE route = 'bicycle') AS bicycle
         FULL OUTER JOIN (SELECT * FROM changes_osm_route_bicycle_hiking_max_network WHERE route = 'hiking') AS hiking ON
-            bicycle.osm_id = hiking.osm_id AND
-            bicycle.is_old = hiking.is_old;
-
-    -- Collect all original existing ways from impacted mmerge
-    CREATE TEMP TABLE original AS
-    SELECT DISTINCT ON (geometry, bicycle_network, bicycle_name, bicycle_ref, hiking_network, hiking_name, hiking_ref)
-        t.geometry AS geometry,
-        t.bicycle_network,
-        t.bicycle_name,
-        t.bicycle_ref,
-        t.hiking_network,
-        t.hiking_name,
-        t.hiking_ref
-    FROM
-        changes_osm_route_bicycle_hiking_network AS c
-        JOIN osm_route_bicycle_hiking_network_merge AS r ON
-            r.geometry && c.geometry
-            -- AND r.bicycle_network IS NOT DISTINCT FROM c.bicycle_network
-            AND r.bicycle_name IS NOT DISTINCT FROM c.bicycle_name
-            AND r.bicycle_ref IS NOT DISTINCT FROM c.bicycle_ref
-            -- AND r.hiking_network IS NOT DISTINCT FROM c.hiking_network
-            AND r.hiking_name IS NOT DISTINCT FROM c.hiking_name
-            AND r.hiking_ref IS NOT DISTINCT FROM c.hiking_ref
-        JOIN osm_route_bicycle_hiking_network AS t ON
-            NOT t.osm_id IN (SELECT osm_id FROM changes_osm_route_bicycle_hiking_network)
-            AND t.geometry && r.geometry
-            AND ST_Contains(r.geometry, t.geometry)
-            -- AND t.bicycle_network IS NOT DISTINCT FROM r.bicycle_network
-            AND t.bicycle_name IS NOT DISTINCT FROM r.bicycle_name
-            AND t.bicycle_ref IS NOT DISTINCT FROM r.bicycle_ref
-            -- AND t.hiking_network IS NOT DISTINCT FROM r.hiking_network
-            AND t.hiking_name IS NOT DISTINCT FROM r.hiking_name
-            AND t.hiking_ref IS NOT DISTINCT FROM r.hiking_ref;
-
-    DELETE
-    FROM osm_route_bicycle_hiking_network_merge AS t
-        USING changes_osm_route_bicycle_hiking_network AS c
-    WHERE
-        t.geometry && c.geometry
-        -- AND t.bicycle_network IS NOT DISTINCT FROM c.bicycle_network
-        AND t.bicycle_name IS NOT DISTINCT FROM c.bicycle_name
-        AND t.bicycle_ref IS NOT DISTINCT FROM c.bicycle_ref
-        -- AND t.hiking_network IS NOT DISTINCT FROM c.hiking_network
-        AND t.hiking_name IS NOT DISTINCT FROM c.hiking_name
-        AND t.hiking_ref IS NOT DISTINCT FROM c.hiking_ref;
+            bicycle.osm_id = hiking.osm_id
+    ;
 
     INSERT INTO osm_route_bicycle_hiking_network_merge (geometry, bicycle_network, bicycle_name, bicycle_ref, hiking_network, hiking_name, hiking_ref)
-    SELECT (ST_Dump(ST_LineMerge(ST_Collect(t.geometry)))).geom::geometry(Geometry,3857) AS geometry,
-        t.bicycle_network,
-        t.bicycle_name,
-        t.bicycle_ref,
-        t.hiking_network,
-        t.hiking_name,
-        t.hiking_ref
-    FROM ((
-            SELECT
-                *
-            FROM
-                original
-        ) UNION ALL (
-            -- New or updated ways
-            SELECT
-                r.geometry AS geometry,
-                r.bicycle_network,
-                r.bicycle_name,
-                r.bicycle_ref,
-                r.hiking_network,
-                r.hiking_name,
-                r.hiking_ref
-            FROM
-                changes_osm_route_bicycle_hiking_network AS c
-                JOIN osm_route_bicycle_hiking_network AS r ON
-                    r.geometry && c.geometry
-                    AND ST_Equals(r.geometry, c.geometry)
-                    -- AND r.bicycle_network IS NOT DISTINCT FROM c.bicycle_network
-                    AND r.bicycle_name IS NOT DISTINCT FROM c.bicycle_name
-                    AND r.bicycle_ref IS NOT DISTINCT FROM c.bicycle_ref
-                    -- AND r.hiking_network IS NOT DISTINCT FROM c.hiking_network
-                    AND r.hiking_name IS NOT DISTINCT FROM c.hiking_name
-                    AND r.hiking_ref IS NOT DISTINCT FROM c.hiking_ref
-            WHERE
-                NOT c.is_old
-        )) AS t
+    SELECT (ST_Dump(ST_LineMerge(ST_Collect(geometry)))).geom::geometry(Geometry,3857) AS geometry,
+        bicycle_network,
+        bicycle_name,
+        bicycle_ref,
+        hiking_network,
+        hiking_name,
+        hiking_ref
+    FROM
+        changes_osm_route_bicycle_hiking_network
     GROUP BY
-        t.bicycle_network,
-        t.bicycle_name,
-        t.bicycle_ref,
-        t.hiking_network,
-        t.hiking_name,
-        t.hiking_ref;
+        bicycle_network,
+        bicycle_name,
+        bicycle_ref,
+        hiking_network,
+        hiking_name,
+        hiking_ref;
 
     DROP VIEW changes_osm_route_bicycle_hiking_network;
-    DROP VIEW changes_osm_route_bicycle_hiking_max_network;
-    DROP TABLE original;
+    DROP TABLE changes_osm_route_bicycle_hiking_max_network;
+    DROP TABLE original_merge;
     DROP TABLE changes_compact;
     -- noinspection SqlWithoutWhere
     DELETE FROM route_bicycle_hiking.changes;
