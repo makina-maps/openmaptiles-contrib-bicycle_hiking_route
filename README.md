@@ -12,7 +12,10 @@ Git-clone this project on the root the the OpenMapTiles project:
 git clone https://github.com/makina-maps/openmaptiles-layer-route_bicycle_hiking.git layers_extra/route_bicycle_hiking
 ```
 
-Add the layer definition from `layers_extra/route_bicycle_hiking/route_bicycle_hiking/route.yaml` on your own `openmaptiles.yaml` tileset definition. Change `TILESET_FILE` from the OpenMapTiles `.env` to point on it.
+Add the layer definition to your own `openmaptiles.yaml` tileset definition:
+* `layers_extra/route_bicycle_hiking/route_bicycle_hiking/route_bicycle_hiking.yaml`
+* `layers_extra/route_bicycle_hiking/transportation_bicycle/transportation_bicycle.yaml`
+Change `TILESET_FILE` from the OpenMapTiles `.env` to point on it.
 
 ## Styles
 
