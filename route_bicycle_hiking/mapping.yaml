@@ -16,6 +16,8 @@ tables:
   route_bicycle_hiking_linestring:
     type: relation_member
     columns:
+    - name: relation_id
+      type: id
     - name: osm_id
       type: member_id
     - name: role
