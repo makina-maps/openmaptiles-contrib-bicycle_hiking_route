@@ -9,7 +9,7 @@ It adds the data layer:
 
 Git-clone this project on the root the the OpenMapTiles project:
 ```
-git clone https://github.com/makina-maps/openmaptiles-layer-route_bicycle_hiking.git layers_extra/route_bicycle_hiking
+git clone https://github.com/makina-maps/openmaptiles-contrib-bicycle_hiking_route.git layers_extra/route_bicycle_hiking
 ```
 
 Add the layer definition to your own `openmaptiles.yaml` tileset definition:
