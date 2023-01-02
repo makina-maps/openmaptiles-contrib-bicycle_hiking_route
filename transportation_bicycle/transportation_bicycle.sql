@@ -184,6 +184,9 @@ FROM
     osm_highway_bicycle_side
 GROUP BY
     osm_id
+HAVING
+    facility_left IS NOT NULL OR
+    facility_right IS NOT NULL
 ;
 CREATE UNIQUE INDEX IF NOT EXISTS osm_highway_bicycle_all_osm_id_idx ON osm_highway_bicycle_all(osm_id);
 
@@ -239,11 +242,7 @@ $$
         FROM
             osm_highway_bicycle_all_geom
         WHERE
-            (
-                (zoom_level >= 11 AND (facility_left IS NOT NULL OR facility_right IS NOT NULL))
-                OR
-                zoom_level >= 13
-            )
+            zoom_level >= 11
 
         UNION ALL
 
