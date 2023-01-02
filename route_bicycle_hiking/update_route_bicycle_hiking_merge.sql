@@ -105,7 +105,7 @@ $$
 BEGIN
     -- etldoc: osm_route_bicycle_hiking_network_merge -> osm_route_bicycle_hiking_network_gen_z12
     INSERT INTO osm_route_bicycle_hiking_network_gen_z12
-    SELECT ST_Simplify(geometry, ZRes(12)) AS geometry,
+    SELECT ST_Simplify(geometry, ZRes(14)) AS geometry,
         id,
         bicycle_network,
         bicycle_name,
@@ -120,7 +120,7 @@ BEGIN
 
     -- etldoc: osm_route_bicycle_hiking_network_gen_z12 -> osm_route_bicycle_hiking_network_gen_z11
     INSERT INTO osm_route_bicycle_hiking_network_gen_z11
-    SELECT ST_Simplify(geometry, ZRes(11)) AS geometry,
+    SELECT ST_Simplify(geometry, ZRes(13)) AS geometry,
         id,
         bicycle_network,
         bicycle_name,
@@ -135,7 +135,7 @@ BEGIN
 
     -- etldoc: osm_route_bicycle_hiking_network_gen_z11 -> osm_route_bicycle_hiking_network_gen_z10
     INSERT INTO osm_route_bicycle_hiking_network_gen_z10
-    SELECT ST_Simplify(geometry, ZRes(10)) AS geometry,
+    SELECT ST_Simplify(geometry, ZRes(12)) AS geometry,
         id,
         bicycle_network,
         bicycle_name,
@@ -150,7 +150,7 @@ BEGIN
 
     -- etldoc: osm_route_bicycle_hiking_network_gen_z10 -> osm_route_bicycle_hiking_network_gen_z9
     INSERT INTO osm_route_bicycle_hiking_network_gen_z9
-    SELECT ST_Simplify(geometry, ZRes(9)) AS geometry,
+    SELECT ST_Simplify(geometry, ZRes(11)) AS geometry,
         id,
         bicycle_network,
         bicycle_name,
@@ -166,7 +166,7 @@ BEGIN
 
     -- etldoc: osm_route_bicycle_hiking_network_gen_z9 -> osm_route_bicycle_hiking_network_gen_z8
     INSERT INTO osm_route_bicycle_hiking_network_gen_z8
-    SELECT ST_Simplify(geometry, ZRes(8)) AS geometry,
+    SELECT ST_Simplify(geometry, ZRes(10)) AS geometry,
         id,
         bicycle_network,
         bicycle_name,
@@ -181,7 +181,7 @@ BEGIN
 
     -- etldoc: osm_route_bicycle_hiking_network_gen_z8 -> osm_route_bicycle_hiking_network_gen_z7
     INSERT INTO osm_route_bicycle_hiking_network_gen_z7
-    SELECT ST_Simplify(geometry, ZRes(7)) AS geometry,
+    SELECT ST_Simplify(geometry, ZRes(9)) AS geometry,
         id,
         bicycle_network,
         bicycle_name,
@@ -197,7 +197,7 @@ BEGIN
 
     -- etldoc: osm_route_bicycle_hiking_network_gen_z7 -> osm_route_bicycle_hiking_network_gen_z6
     INSERT INTO osm_route_bicycle_hiking_network_gen_z6
-    SELECT ST_Simplify(geometry, ZRes(6)) AS geometry,
+    SELECT ST_Simplify(geometry, ZRes(8)) AS geometry,
         id,
         bicycle_network,
         bicycle_name,
@@ -212,7 +212,7 @@ BEGIN
 
     -- etldoc: osm_route_bicycle_hiking_network_gen_z6 -> osm_route_bicycle_hiking_network_gen_z5
     INSERT INTO osm_route_bicycle_hiking_network_gen_z5
-    SELECT ST_Simplify(geometry, ZRes(5)) AS geometry,
+    SELECT ST_Simplify(geometry, ZRes(7)) AS geometry,
         id,
         bicycle_network,
         bicycle_name,
@@ -228,7 +228,7 @@ BEGIN
 
     -- etldoc: osm_route_bicycle_hiking_network_gen_z5 -> osm_route_bicycle_hiking_network_gen_z4
     INSERT INTO osm_route_bicycle_hiking_network_gen_z4
-    SELECT ST_Simplify(geometry, ZRes(4)) AS geometry,
+    SELECT ST_Simplify(geometry, ZRes(6)) AS geometry,
         id,
         bicycle_network,
         bicycle_name,
