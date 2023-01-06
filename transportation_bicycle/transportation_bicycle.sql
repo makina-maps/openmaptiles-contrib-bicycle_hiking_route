@@ -21,6 +21,7 @@ SELECT
 FROM
     osm_highway_bicycle
 WHERE
+    highway != 'cycleway' AND
     "cycleway:left" NOT IN ('', 'no', 'none')
 
 UNION ALL
@@ -45,6 +46,7 @@ SELECT
     END AS access,
     'right' AS side
 FROM
+    highway != 'cycleway' AND
     osm_highway_bicycle
 WHERE
     "cycleway:right" NOT IN ('', 'no', 'none')
@@ -112,7 +114,7 @@ SELECT
     side
 FROM
     (VALUES ('right'), ('left')) AS t(side),
-    (SELECT *, CASE WHEN "cycleway:both" != '' THEN "cycleway:both" ELSE cycleway END AS way FROM osm_highway_bicycle) AS osm_highway_bicycle
+    (SELECT *, CASE WHEN "cycleway:both" != '' THEN "cycleway:both" ELSE cycleway END AS way FROM osm_highway_bicycle WHERE highway != 'cycleway') AS osm_highway_bicycle
 WHERE
     way NOT IN ('', 'no', 'none')
 
@@ -149,8 +151,7 @@ FROM
     (VALUES ('right'), ('left')) AS t(side),
     osm_highway_bicycle
 WHERE
-    bicycle NOT IN ('no', 'none') AND
-    highway NOT IN ('motorway', 'motorway_link') AND
+    highway != 'cycleway' AND
     (highway NOT IN ('pedestrian', 'path', 'footway') OR bicycle IN ('yes', 'designated')) AND
     (highway NOT IN ('steps') OR "ramp:bicycle" = 'yes')
 ;
@@ -261,7 +262,7 @@ $$
             NULL::text AS facility_right,
             NULL::smallint AS access_right
         FROM
-            osm_cycleway
+            osm_highway_bicycle
         WHERE
             zoom_level >= 11 AND
             highway = 'cycleway'

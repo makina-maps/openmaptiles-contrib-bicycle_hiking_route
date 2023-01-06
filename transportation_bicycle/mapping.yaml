@@ -5,6 +5,8 @@ tables:
     columns:
     - name: osm_id
       type: id
+    - name: geometry
+      type: geometry
     - name: highway
       key: highway
       type: string
@@ -36,35 +38,12 @@ tables:
       key: junction
       type: string
     mapping:
-      highway: [residential, service, track, unclassified, footway, path, tertiary, secondary, primary, living_street, steps, pedestrian, primary_link, secondary_link, tertiary_link, road, bridleway]
+      highway: [cycleway, residential, service, track, unclassified, footway, path, tertiary, secondary, primary, living_street, steps, pedestrian, primary_link, secondary_link, tertiary_link, road, bridleway]
       junction: [roundabout]
-      access: [_any_] # Only for filter
     filters:
+      require:
+        highway: ["__any__"]
       reject:
-        bicycle: ['no']
-        access: ['no', private]
+        bicycle: ['no', 'none']
+        highway: ['motorway', 'motorway_link']
         service: [parking_aisle]
-
-  # etldoc: imposm3 -> osm_cycleway
-  cycleway:
-    type: linestring
-    columns:
-    - name: osm_id
-      type: id
-    - name: geometry
-      type: geometry
-    - name: highway
-      key: highway
-      type: string
-    - name: bicycle
-      key: bicycle
-      type: string
-    - name: oneway
-      key: oneway
-      type: string
-    - name: junction
-      key: junction
-      type: string
-    mapping:
-      highway: [cycleway]
-      junction: [roundabout]
