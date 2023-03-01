@@ -45,5 +45,9 @@ tables:
         highway: ["__any__"]
       reject:
         bicycle: ['no', 'none']
+        cycleway: ['separate']
+        "cycleway:left": ['separate']
+        "cycleway:right": ['separate']
+        "cycleway:both": ['separate']
         highway: ['motorway', 'motorway_link']
         service: [parking_aisle]
